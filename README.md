@@ -6,7 +6,7 @@ PC 端多人**回合制棋盘游戏**平台：房主 Listen-Server + **frp 仅�
 - 用短**房间码**或主机地址加入
 - 插件化游戏接口，便于后续扩展
 - 零付费云依赖（标准库 + FastAPI / WebSocket）
-- 终端客户端仍可用（高级选项）
+- 终端客户端 `client.py` 仍保留但**已不推荐**（请用浏览器）
 
 ## 架构
 
@@ -67,27 +67,15 @@ python -m boardgame_platform host --port 8765
 
 首页还会显示若干灰色「即将推出」占位卡。
 
-### 终端客户端（高级选项）
+### 终端客户端（已不推荐）
 
-协议不变，仍可用终端 UI：
+日常请用**浏览器**。仓库仍保留 `client.py` 供开发调试，不推荐普通用户使用：
 
 ```bash
-# 终端 1 已启动 host 后
-python -m boardgame_platform client -n Alice   # 创建房间 → ready → start
-python -m boardgame_platform client -n Bob     # 加入房间码 → ready → 输入 0-8
+python -m boardgame_platform client -n Alice   # 仅高级/开发
 ```
 
-棋盘示意（终端空位显示编号；网页直接点击）：
-
-```
- 0 | 1 | 2
----+---+---
- 3 | 4 | 5
----+---+---
- 6 | 7 | 8
-```
-
-X（先手，通常为房主座位 0）与 O 轮流落子，三连或填满结束。
+井字棋：X 先手（通常房主座位 0），鼠标点格落子，三连或填满结束。
 
 
 ## Windows 免安装包（exe）
@@ -117,11 +105,10 @@ X（先手，通常为房主座位 0）与 O 轮流落子，三连或填满结�
 
 ```bash
 python -m boardgame_platform host [--host 0.0.0.0] [--port 8765] [--no-browser]
-python -m boardgame_platform client [--url ws://127.0.0.1:8765/ws] [-n 昵称]
-python -m boardgame_platform client --host 1.2.3.4 --port 18765 -n 小明
 ```
 
-也可安装后使用入口脚本：`boardgame-host` / `boardgame-client`。
+安装后入口：`boardgame-host`。  
+（`boardgame-client` / `client.py` 仅开发调试，**已不推荐**。）
 
 ## 协议概要（JSON over WebSocket）
 

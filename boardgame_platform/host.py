@@ -35,11 +35,21 @@ def web_dir() -> Path:
 
 
 class ConnectionHub:
-    """Track WebSocket connections by player_id."""
+    """Track WebSocket connections by player_id and stable browser session_id."""
 
     def __init__(self) -> None:
         self.by_player: dict[str, WebSocket] = {}
         self.player_meta: dict[str, dict[str, Any]] = {}
+        self.sessions: dict[str, str] = {}  # session_id → player_id
+
+    def player_for_session(self, session_id: str) -> str | None:
+        if not session_id:
+            return None
+        return self.sessions.get(session_id)
+
+    def bind_session(self, session_id: str, player_id: str) -> None:
+        if session_id:
+            self.sessions[session_id] = player_id
 
     async def register(self, player_id: str, ws: WebSocket, nickname: str = "") -> None:
         old = self.by_player.get(player_id)
@@ -49,7 +59,12 @@ class ConnectionHub:
             except Exception:
                 pass
         self.by_player[player_id] = ws
-        self.player_meta[player_id] = {"nickname": nickname}
+        meta = self.player_meta.get(player_id) or {}
+        if nickname:
+            meta["nickname"] = nickname
+        elif "nickname" not in meta:
+            meta["nickname"] = ""
+        self.player_meta[player_id] = meta
 
     def unregister(self, player_id: str, ws: WebSocket | None = None) -> None:
         cur = self.by_player.get(player_id)
@@ -110,17 +125,63 @@ def create_app(rooms: RoomManager | None = None, hub: ConnectionHub | None = Non
     @app.websocket("/ws")
     async def websocket_endpoint(ws: WebSocket) -> None:
         await ws.accept()
-        player_id = secrets.token_hex(8)
-        nickname = f"Player-{player_id[:4]}"
-        await hub.register(player_id, ws, nickname)
-        await ws.send_json(
-            msg(
-                MsgType.WELCOME,
-                player_id=player_id,
-                games=list_games(),
-                hint="发送 create_room / join_room / list_games 等消息",
+        session_id = (ws.query_params.get("session_id") or "").strip()
+        existing = hub.player_for_session(session_id) if session_id else None
+        restored = False
+        if existing:
+            player_id = existing
+            nickname = str(
+                hub.player_meta.get(player_id, {}).get("nickname")
+                or f"Player-{player_id[:4]}"
             )
-        )
+            restored = True
+        else:
+            player_id = secrets.token_hex(8)
+            nickname = f"Player-{player_id[:4]}"
+            hub.bind_session(session_id, player_id)
+
+        await hub.register(player_id, ws, nickname)
+
+        room = rooms.room_of(player_id)
+        if room is not None and player_id in room.players:
+            rooms.mark_connected(player_id)
+            room = rooms.room_of(player_id)
+
+        welcome: dict[str, Any] = {
+            "player_id": player_id,
+            "games": list_games(),
+            "hint": "发送 create_room / join_room / list_games 等消息",
+        }
+        if session_id:
+            welcome["session_id"] = session_id
+        if restored:
+            welcome["restored"] = True
+        if room is not None and player_id in room.players:
+            welcome["room"] = room.public_snapshot()
+
+        await ws.send_json(msg(MsgType.WELCOME, **welcome))
+
+        # Resume mid-game / lobby UI after reconnect
+        if room is not None and player_id in room.players:
+            await hub.broadcast_room(
+                room,
+                msg(MsgType.ROOM_UPDATE, room=room.public_snapshot()),
+                exclude=player_id,
+            )
+            if room.phase in (RoomPhase.PLAYING, RoomPhase.FINISHED) and room.game is not None:
+                state = rooms.filtered_state(room, player_id)
+                if state is not None:
+                    await ws.send_json(msg(MsgType.STATE, state=state))
+                if room.phase == RoomPhase.FINISHED:
+                    over = room.game.is_over()
+                    await ws.send_json(
+                        msg(
+                            MsgType.GAME_OVER,
+                            winner_id=over.winner_id,
+                            reason=over.reason,
+                            room=room.public_snapshot(),
+                        )
+                    )
 
         try:
             while True:
@@ -137,13 +198,15 @@ def create_app(rooms: RoomManager | None = None, hub: ConnectionHub | None = Non
         except WebSocketDisconnect:
             pass
         finally:
-            room = rooms.leave(player_id)
-            hub.unregister(player_id, ws)
-            if room is not None:
-                await hub.broadcast_room(
-                    room,
-                    msg(MsgType.ROOM_UPDATE, room=room.public_snapshot()),
-                )
+            # Only treat as disconnect if this socket is still the active one
+            if hub.by_player.get(player_id) is ws:
+                room = rooms.mark_disconnected(player_id)
+                hub.unregister(player_id, ws)
+                if room is not None:
+                    await hub.broadcast_room(
+                        room,
+                        msg(MsgType.ROOM_UPDATE, room=room.public_snapshot()),
+                    )
 
     if assets.is_dir():
         app.mount("/static", StaticFiles(directory=str(assets)), name="static")

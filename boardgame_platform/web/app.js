@@ -22,9 +22,26 @@
 
   const $ = (id) => document.getElementById(id);
 
+  function getSessionId() {
+    try {
+      let id = sessionStorage.getItem("bg_session_id");
+      if (!id) {
+        id =
+          (typeof crypto !== "undefined" && crypto.randomUUID)
+            ? crypto.randomUUID()
+            : `s-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+        sessionStorage.setItem("bg_session_id", id);
+      }
+      return id;
+    } catch {
+      return `s-${Date.now().toString(36)}`;
+    }
+  }
+
   function wsUrl() {
     const proto = location.protocol === "https:" ? "wss:" : "ws:";
-    return `${proto}//${location.host}/ws`;
+    const sid = encodeURIComponent(getSessionId());
+    return `${proto}//${location.host}/ws?session_id=${sid}`;
   }
 
   function showView(name) {
@@ -104,6 +121,16 @@
         state.playerId = data.player_id;
         state.games = data.games || [];
         renderHome();
+        if (data.room) {
+          state.room = data.room;
+          if (data.room.phase === "playing" || data.room.phase === "finished") {
+            $("play-room-code").textContent = data.room.code || "------";
+            showView("play");
+            buildBoard();
+          } else {
+            enterRoomView();
+          }
+        }
         break;
       case "games":
         state.games = data.games || [];
@@ -304,7 +331,10 @@
     const cells = $("board").querySelectorAll(".cell");
     const board = gs.board || [];
     const yourTurn = !!gs.your_turn;
-    const over = !!(gs.winner || gs.draw || state.gameOver);
+    const over = !!(
+      state.gameOver ||
+      (((gs.winner || gs.draw) && (gs.move_count || 0) > 0))
+    );
 
     cells.forEach((cell, i) => {
       const v = board[i];

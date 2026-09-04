@@ -198,7 +198,27 @@ class RoomManager:
             room.phase = RoomPhase.FINISHED
         return room
 
+    def mark_disconnected(self, player_id: str) -> Room | None:
+        """Transient WS drop: keep seat + room mapping so session reconnect can resume."""
+        room = self.room_of(player_id)
+        if room is None:
+            return None
+        player = room.players.get(player_id)
+        if player:
+            player.connected = False
+        return room
+
+    def mark_connected(self, player_id: str) -> Room | None:
+        room = self.room_of(player_id)
+        if room is None:
+            return None
+        player = room.players.get(player_id)
+        if player:
+            player.connected = True
+        return room
+
     def leave(self, player_id: str) -> Room | None:
+        """Explicit leave (or cleanup): remove from lobby; keep seat if mid-game."""
         room = self.room_of(player_id)
         if room is None:
             return None
