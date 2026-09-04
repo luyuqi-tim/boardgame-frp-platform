@@ -77,6 +77,32 @@ python -m boardgame_platform client -n Bob
 
 X（先手，通常为房主座位 0）与 O 轮流落子，三连或填满结束。
 
+
+## Windows 免安装包（exe）
+
+不装 Python 也可以玩。仓库用 GitHub Actions 在 Windows 上自动打包：
+
+1. 打开仓库 **Actions** → **Build Windows EXE** → **Run workflow**
+2. 跑完后进入该次运行 → **Artifacts** → 下载 `boardgame-windows-exe`
+3. 解压得到：
+   - `BoardGameHost.exe` — 建房者运行（开主机）
+   - `BoardGameClient.exe` — 所有人运行（创建/加入房间）
+
+本机双击流程（局域网先测）：
+
+1. 建房者双击 `BoardGameHost.exe`（默认端口 8765，窗口别关）
+2. 两人各开 `BoardGameClient.exe`，一人创建房间、一人输入房间码加入
+
+异地：主机仍要配合 frp（见 `docs/frp-zh.md`），客户端连接时填穿透后的地址。
+
+也可在已装 Python 的 Windows 上手动打包：
+
+```powershell
+.\packaging\build_windows.ps1
+```
+
+产物在 `dist\`。
+
 ### 远程联机（frp）
 
 详见 **[docs/frp-zh.md](docs/frp-zh.md)**（OpenFrp + 自建 frps）。
