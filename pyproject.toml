@@ -33,3 +33,7 @@ include = ["boardgame_platform*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+
+[tool.setuptools.package-data]
+boardgame_platform = ["web/*"]
+

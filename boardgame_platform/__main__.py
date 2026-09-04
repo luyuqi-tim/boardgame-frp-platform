@@ -20,9 +20,10 @@ def client_main() -> None:
 def main() -> None:
     if len(sys.argv) < 2 or sys.argv[1] in ("-h", "--help"):
         print("用法:")
-        print("  python -m boardgame_platform host [--host 0.0.0.0] [--port 8765]")
+        print("  python -m boardgame_platform host [--host 0.0.0.0] [--port 8765] [--no-browser]")
         print("  python -m boardgame_platform client [--url ws://127.0.0.1:8765/ws] [-n 昵称]")
         print("  python -m boardgame_platform client --host 公网IP --port 映射端口 -n 昵称")
+        print("主机默认打开浏览器网页界面；终端客户端仍可用。")
         sys.exit(0 if len(sys.argv) > 1 else 1)
 
     cmd = sys.argv[1]

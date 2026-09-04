@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>桌游联机平台</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Home -->
+    <section id="view-home" class="view active">
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-icon">🎲</span>
+          <div>
+            <h1>桌游联机平台</h1>
+            <p class="subtitle">房主开主机 · 短房间码加入 · 浏览器即玩</p>
+          </div>
+        </div>
+        <div id="conn-status" class="conn-pill offline">未连接</div>
+      </header>
+      <main class="panel home-panel">
+        <h2 class="section-title">选择游戏</h2>
+        <div id="game-grid" class="game-grid"></div>
+      </main>
+      <footer class="footer-hint">高级选项：终端客户端 <code>python -m boardgame_platform client</code></footer>
+    </section>
+
+    <!-- Game lobby (create / join) -->
+    <section id="view-lobby" class="view">
+      <header class="topbar compact">
+        <button type="button" class="btn ghost" id="btn-back-home">← 返回</button>
+        <h1 id="lobby-game-title">井字棋</h1>
+        <div id="conn-status-lobby" class="conn-pill offline">未连接</div>
+      </header>
+      <main class="panel lobby-panel">
+        <label class="field">
+          <span>昵称</span>
+          <input id="nickname" type="text" maxlength="16" placeholder="输入你的昵称" autocomplete="nickname" />
+        </label>
+        <div class="lobby-actions">
+          <button type="button" class="btn primary large" id="btn-create">创建房间</button>
+          <div class="join-row">
+            <input id="join-code" type="text" maxlength="8" placeholder="房间号" class="code-input" autocomplete="off" />
+            <button type="button" class="btn secondary large" id="btn-join">进入房间</button>
+          </div>
+        </div>
+        <p id="lobby-error" class="error-msg" hidden></p>
+      </main>
+    </section>
+
+    <!-- Room waiting -->
+    <section id="view-room" class="view">
+      <header class="topbar compact">
+        <button type="button" class="btn ghost" id="btn-leave-room">← 离开</button>
+        <h1>等待大厅</h1>
+        <span class="spacer"></span>
+      </header>
+      <main class="panel room-panel">
+        <div class="room-code-block">
+          <span class="label">房间号</span>
+          <button type="button" id="room-code" class="room-code" title="点击复制">------</button>
+          <span id="copy-toast" class="copy-toast" hidden>已复制</span>
+        </div>
+        <div id="seat-list" class="seat-list"></div>
+        <div class="room-actions">
+          <button type="button" class="btn secondary large" id="btn-ready">准备</button>
+          <button type="button" class="btn primary large" id="btn-start" hidden>开始游戏</button>
+        </div>
+        <p id="room-error" class="error-msg" hidden></p>
+      </main>
+    </section>
+
+    <!-- Play -->
+    <section id="view-play" class="view">
+      <header class="topbar compact play-top">
+        <div class="play-meta">
+          <span class="room-chip">房间 <strong id="play-room-code">------</strong></span>
+          <span id="turn-indicator" class="turn-indicator">对局中</span>
+        </div>
+        <div id="symbol-badge" class="symbol-badge">你是 —</div>
+      </header>
+      <main class="play-main">
+        <div id="players-bar" class="players-bar"></div>
+        <div id="board" class="board" aria-label="井字棋棋盘"></div>
+      </main>
+      <div id="game-over-overlay" class="overlay" hidden>
+        <div class="overlay-card">
+          <h2 id="game-over-title">游戏结束</h2>
+          <p id="game-over-reason"></p>
+          <button type="button" class="btn primary large" id="btn-back-lobby">返回游戏大厅</button>
+        </div>
+      </div>
+      <p id="play-error" class="error-msg play-error" hidden></p>
+    </section>
+  </div>
+  <script src="/static/app.js"></script>
+</body>
+</html>

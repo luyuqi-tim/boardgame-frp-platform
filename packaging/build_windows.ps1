@@ -6,8 +6,10 @@ python -m pip install -U pip
 python -m pip install -e .
 python -m pip install pyinstaller
 
+# Windows --add-data uses semicolon: source;dest
 python -m PyInstaller --noconfirm --clean --onefile --console `
   --name BoardGameHost `
+  --add-data "boardgame_platform\web;boardgame_platform\web" `
   --hidden-import boardgame_platform.games.tictactoe `
   --hidden-import uvicorn.logging `
   --hidden-import uvicorn.loops.auto `

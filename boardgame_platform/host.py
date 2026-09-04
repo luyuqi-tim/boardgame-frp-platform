@@ -1,16 +1,20 @@
-"""Authoritative listen-server (FastAPI + WebSocket)."""
+"""Authoritative listen-server (FastAPI + WebSocket + web UI)."""
 
 from __future__ import annotations
 
 import argparse
-import asyncio
 import json
 import secrets
 import sys
+import threading
+import time
+import webbrowser
+from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from boardgame_platform.game_api import ensure_builtin_games_loaded, list_games
 from boardgame_platform.protocol import MsgType, msg
@@ -18,6 +22,16 @@ from boardgame_platform.room import Room, RoomManager, RoomPhase
 
 
 ensure_builtin_games_loaded()
+
+
+def web_dir() -> Path:
+    """Locate packaged web assets (dev tree or PyInstaller _MEIPASS)."""
+    meipass = getattr(sys, "_MEIPASS", None)
+    if meipass:
+        bundled = Path(meipass) / "boardgame_platform" / "web"
+        if bundled.is_dir():
+            return bundled
+    return Path(__file__).resolve().parent / "web"
 
 
 class ConnectionHub:
@@ -79,17 +93,19 @@ def create_app(rooms: RoomManager | None = None, hub: ConnectionHub | None = Non
     app.state.rooms = rooms
     app.state.hub = hub
 
-    @app.get("/", response_class=PlainTextResponse)
-    async def root() -> str:
-        return (
-            "boardgame-frp-platform host is running.\n"
-            "Connect via WebSocket at /ws\n"
-            f"Games: {', '.join(g['game_id'] for g in list_games())}\n"
-        )
+    assets = web_dir()
 
     @app.get("/health")
     async def health() -> dict[str, str]:
         return {"status": "ok"}
+
+    @app.get("/api/games")
+    async def api_games() -> dict[str, Any]:
+        return {"games": list_games()}
+
+    @app.get("/")
+    async def index() -> FileResponse:
+        return FileResponse(assets / "index.html")
 
     @app.websocket("/ws")
     async def websocket_endpoint(ws: WebSocket) -> None:
@@ -128,6 +144,9 @@ def create_app(rooms: RoomManager | None = None, hub: ConnectionHub | None = Non
                     room,
                     msg(MsgType.ROOM_UPDATE, room=room.public_snapshot()),
                 )
+
+    if assets.is_dir():
+        app.mount("/static", StaticFiles(directory=str(assets)), name="static")
 
     return app
 
@@ -256,22 +275,39 @@ async def _handle(
     await err(f"未知消息类型: {t}")
 
 
-def run_host(host: str = "0.0.0.0", port: int = 8765) -> None:
+def run_host(
+    host: str = "0.0.0.0",
+    port: int = 8765,
+    open_browser: bool = True,
+) -> None:
     import uvicorn
 
     app = create_app()
     local_hint = "127.0.0.1" if host in ("0.0.0.0", "::") else host
+    ui_url = f"http://{local_hint}:{port}/"
     print("=" * 60)
     print("  boardgame-frp-platform  主机 (Listen Server)")
     print("=" * 60)
+    print(f"  网页界面:        {ui_url}")
     print(f"  本地 WebSocket:  ws://{local_hint}:{port}/ws")
     print(f"  健康检查:        http://{local_hint}:{port}/health")
     print()
-    print("  客户端连接后创建房间会得到短房间码。")
+    print("  浏览器打开网页即可创建/加入房间并鼠标对局。")
     print("  远程联机：用 frp 把本机端口映射出去，")
     print("  然后把「公网 host:port + 房间码」分享给好友。")
     print("  详见 docs/frp-zh.md")
     print("=" * 60)
+
+    if open_browser:
+        def _open() -> None:
+            time.sleep(0.9)
+            try:
+                webbrowser.open(ui_url)
+            except Exception:
+                pass
+
+        threading.Thread(target=_open, daemon=True).start()
+
     uvicorn.run(app, host=host, port=port, log_level="info")
 
 
@@ -279,12 +315,17 @@ def build_argparser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="启动棋盘游戏主机 (listen-server)")
     p.add_argument("--host", default="0.0.0.0", help="绑定地址 (默认 0.0.0.0)")
     p.add_argument("--port", type=int, default=8765, help="端口 (默认 8765)")
+    p.add_argument(
+        "--no-browser",
+        action="store_true",
+        help="不自动打开浏览器界面",
+    )
     return p
 
 
 def main(argv: list[str] | None = None) -> None:
     args = build_argparser().parse_args(argv)
-    run_host(host=args.host, port=args.port)
+    run_host(host=args.host, port=args.port, open_browser=not args.no_browser)
 
 
 if __name__ == "__main__":

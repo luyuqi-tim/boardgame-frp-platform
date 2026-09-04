@@ -27,6 +27,7 @@ jobs:
           python -m pip install pyinstaller
           python -m PyInstaller --noconfirm --clean --onefile --console `
             --name BoardGameHost `
+            --add-data "boardgame_platform/web;boardgame_platform/web" `
             --hidden-import boardgame_platform.games.tictactoe `
             --hidden-import uvicorn.logging `
             --hidden-import uvicorn.loops.auto `
