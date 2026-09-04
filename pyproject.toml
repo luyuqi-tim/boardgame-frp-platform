@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "boardgame-frp-platform"
+version = "0.1.0"
+description = "PC multiplayer turn-based board-game platform with listen-server + frp connectivity"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+authors = [{ name = "yuqi lu" }]
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.27",
+    "websockets>=12.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "httpx>=0.27",
+]
+
+[project.scripts]
+boardgame-host = "boardgame_platform.__main__:host_main"
+boardgame-client = "boardgame_platform.__main__:client_main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["boardgame_platform*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
