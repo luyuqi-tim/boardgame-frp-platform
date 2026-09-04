@@ -568,11 +568,19 @@ input[type="text"]:focus {
   position: fixed;
   inset: 0;
   background: rgba(4, 12, 28, 0.72);
-  display: grid;
+  display: none;
   place-items: center;
   z-index: 50;
   padding: 20px;
   backdrop-filter: blur(4px);
+}
+
+.overlay:not([hidden]) {
+  display: grid;
+}
+
+.overlay[hidden] {
+  display: none !important;
 }
 
 .overlay-card {

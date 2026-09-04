@@ -340,7 +340,8 @@
       bar.appendChild(pill);
     }
 
-    if (gs.winner || gs.draw) {
+    // Only end UI after real progress or explicit server game_over (avoid empty-board false end)
+    if ((gs.winner || gs.draw) && (gs.move_count || 0) > 0) {
       const reason = gs.draw
         ? "平局！"
         : ((gs.seats || []).find((s) => s.player_id === gs.winner)?.nickname || "玩家") + " 获胜！";

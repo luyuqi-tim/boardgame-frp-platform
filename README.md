@@ -92,43 +92,26 @@ X（先手，通常为房主座位 0）与 O 轮流落子，三连或填满结�
 
 ## Windows 免安装包（exe）
 
-不装 Python 也可以玩。仓库用 GitHub Actions 在 Windows 上自动打包：
+只需 **`BoardGameHost.exe`**（内置网页大厅）。**不再提供 Client exe**——所有人都用浏览器打开主机地址即可。
 
-1. 打开仓库 **Actions** → **Build Windows EXE** → **Run workflow**
-2. 跑完后进入该次运行 → **Artifacts** → 下载 `boardgame-windows-exe`
-3. 解压得到：
-   - `BoardGameHost.exe` — 建房者运行（开主机 + 网页 UI）
-   - `BoardGameClient.exe` — 终端客户端（可选）
+1. 仓库 **Actions** → **Build Windows EXE** → **Run workflow**
+2. 打开该次运行 → **Artifacts** → 下载 `boardgame-windows-host`
+3. 解压得到 `BoardGameHost.exe`
 
-本机流程（局域网先测）：
+### 本机两人（同一电脑两个标签）
 
-1. 建房者双击 `BoardGameHost.exe`（默认端口 8765，窗口别关；会打开浏览器）
-2. 两人用浏览器打开主机打印的网页地址，一人创建房间、一人输入房间码加入
+1. 运行 `BoardGameHost.exe`（窗口勿关）→ 浏览器打开 `http://127.0.0.1:8765/`
+2. 标签 A：井字棋 → 创建房间 → 准备
+3. 标签 B：同一地址 → 井字棋 → 输入房间号加入 → 准备
+4. 房主开始 → 鼠标点格子
 
-异地：主机仍要配合 frp（见 `docs/frp-zh.md`），好友浏览器访问穿透后的 `http://公网host:port/`。
+### 异地 / 手机流量
 
-也可在已装 Python 的 Windows 上手动打包：
-
-```powershell
-.\packaging\build_windows.ps1
-```
-
-产物在 `dist\`（Host exe 已打包 `boardgame_platform/web` 静态资源）。
+见 **[docs/frp-zh.md](docs/frp-zh.md)**：房主开 Host + OpenFrp 映射 8765，朋友打开 `http://公网:端口/`（不能打开 127.0.0.1）。
 
 ### 远程联机（frp）
 
-详见 **[docs/frp-zh.md](docs/frp-zh.md)**（OpenFrp + 自建 frps）。
-
-简要步骤：
-
-1. 房主启动 `python -m boardgame_platform host`
-2. 用 OpenFrp / frpc 把本机 `8765` 映射到公网
-3. 浏览器创建房间拿到房间码
-4. 分享：`http://公网host:port/` + 房间码
-5. 好友用浏览器打开该地址并加入；或终端：  
-   `python -m boardgame_platform client --host <公网> --port <映射端口> -n 昵称`
-
-示例配置：`deploy/frpc.toml.example`。
+请直接阅读 [docs/frp-zh.md](docs/frp-zh.md)。朋友用浏览器访问穿透后的公网地址，无需 Client。
 
 ## CLI
 

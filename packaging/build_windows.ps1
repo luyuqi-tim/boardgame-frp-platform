@@ -1,4 +1,4 @@
-# Build host + client exes on Windows (PowerShell)
+# Build Host exe on Windows (PowerShell) — browser UI only, no Client exe
 $ErrorActionPreference = "Stop"
 Set-Location $PSScriptRoot\..
 
@@ -18,10 +18,5 @@ python -m PyInstaller --noconfirm --clean --onefile --console `
   --hidden-import uvicorn.lifespan.on `
   packaging\run_host.py
 
-python -m PyInstaller --noconfirm --clean --onefile --console `
-  --name BoardGameClient `
-  --hidden-import boardgame_platform.games.tictactoe `
-  packaging\run_client.py
-
-Write-Host "Outputs:"
-Get-ChildItem dist\BoardGameHost.exe, dist\BoardGameClient.exe
+Write-Host "Output:"
+Get-ChildItem dist\BoardGameHost.exe

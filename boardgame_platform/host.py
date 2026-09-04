@@ -292,10 +292,9 @@ def run_host(
     print(f"  本地 WebSocket:  ws://{local_hint}:{port}/ws")
     print(f"  健康检查:        http://{local_hint}:{port}/health")
     print()
-    print("  浏览器打开网页即可创建/加入房间并鼠标对局。")
-    print("  远程联机：用 frp 把本机端口映射出去，")
-    print("  然后把「公网 host:port + 房间码」分享给好友。")
-    print("  详见 docs/frp-zh.md")
+    print("  本机用浏览器打开上面的网页（可开两个标签互玩）。")
+    print("  异地好友不能打开 127.0.0.1；请用 OpenFrp/frp 映射本机端口，")
+    print("  让好友访问 http://公网地址:端口/ 再输入房间码。详见 docs/frp-zh.md")
     print("=" * 60)
 
     if open_browser:
