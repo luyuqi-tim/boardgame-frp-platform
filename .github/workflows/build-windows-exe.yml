@@ -13,9 +13,9 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -39,14 +39,19 @@ jobs:
             --name BoardGameClient `
             --hidden-import boardgame_platform.games.tictactoe `
             packaging/run_client.py
+          if (-not (Test-Path dist/BoardGameHost.exe)) { throw "BoardGameHost.exe missing" }
+          if (-not (Test-Path dist/BoardGameClient.exe)) { throw "BoardGameClient.exe missing" }
+          Get-ChildItem dist/*.exe | Format-Table Name, Length
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: boardgame-windows-exe
           path: |
             dist/BoardGameHost.exe
             dist/BoardGameClient.exe
+          if-no-files-found: error
+          retention-days: 30
 
       - name: Attach to GitHub Release (tags only)
         if: startsWith(github.ref, 'refs/tags/')
